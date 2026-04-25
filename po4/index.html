@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Salty Reef - Magnesium</title>
+<title>Salty Reef - PO4 ULR</title>
 
 <style>
 body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px;}
@@ -34,21 +34,22 @@ a.button {
 <div class="container">
 
 <div class="card">
-<h1>Magnesium meten</h1>
-<p>Volg deze stappen voor een correcte meting.</p>
+<h1>PO4 meten (ULR)</h1>
+<p>Hanna Phosphorus ULR – nauwkeurig meten in stappen.</p>
 </div>
 
 <div class="card">
-<div class="step"><b>1.</b> Vul cuvet volgens instructie</div>
-<div class="step"><b>2.</b> Voeg reagenten toe</div>
-<div class="step"><b>3.</b> Meng goed</div>
-<div class="step"><b>4.</b> Nulmeting (C1)</div>
-<div class="step"><b>5.</b> Meting uitvoeren (C2)</div>
+<div class="step"><b>1.</b> Cuvet spoelen en vullen tot 10 ml</div>
+<div class="step"><b>2.</b> Nulmeting uitvoeren (C1)</div>
+<div class="step"><b>3.</b> Reagens toevoegen (HI736)</div>
+<div class="step"><b>4.</b> 2 minuten schudden tot opgelost</div>
+<div class="step"><b>5.</b> 3 minuten wachten</div>
+<div class="step"><b>6.</b> Meting uitvoeren (C2)</div>
 </div>
 
 <div class="card">
 <h3>Notitie toevoegen</h3>
-<input id="value" placeholder="Waarde (ppm)">
+<input id="value" placeholder="Waarde (ppb P)">
 <textarea id="note" placeholder="Opmerking"></textarea>
 <button onclick="saveNote()">Opslaan</button>
 
@@ -61,7 +62,7 @@ a.button {
 </div>
 
 <script>
-const key="mg_notes";
+const key="po4_notes";
 
 function saveNote(){
   let value=document.getElementById("value").value;
@@ -79,7 +80,7 @@ function saveNote(){
 function loadNotes(){
   let data=JSON.parse(localStorage.getItem(key)||"[]");
   let html="";
-  data.forEach((n,i)=>{
+  data.forEach((n)=>{
     html+=`<div class="note"><b>${n.value||""}</b><br>${n.note||""}<br><small>${n.date}</small></div>`;
   });
   document.getElementById("notes").innerHTML=html;
