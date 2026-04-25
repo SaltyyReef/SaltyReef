@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salty Reef Smart Guide | Hanna Alkalinity</title>
+  <style>
+    :root {
+      --bg: #071923;
+      --card: #0f2a36;
+      --accent: #21c7d9;
+      --accent-soft: #d7faff;
+      --text: #f4fbfd;
+      --muted: #a8c3cc;
+      --warning: #ffd166;
+      --line: rgba(255,255,255,0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #071923 0%, #0b2632 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 22px 16px 32px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .logo-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #06202a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .brand-text {
+      font-size: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+
+    .hero {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(33,199,217,0.12);
+      color: var(--accent-soft);
+      border: 1px solid rgba(33,199,217,0.4);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.15;
+      margin: 0 0 10px;
+    }
+
+    .intro {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 24px 0 12px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+    }
+
+    .step {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 14px 14px 50px;
+      position: relative;
+    }
+
+    .number {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #05202a;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .tips {
+      background: rgba(255,209,102,0.1);
+      border: 1px solid rgba(255,209,102,0.35);
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 18px;
+    }
+
+    .tips h2 {
+      font-size: 17px;
+      margin: 0 0 8px;
+      color: var(--warning);
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .notes {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 18px;
+    }
+
+    .notes h2 {
+      font-size: 17px;
+      margin: 0 0 6px;
+    }
+
+    .notes p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .note-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #8fb0ba;
+    }
+
+    .notes-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .saved-note {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      font-size: 14px;
+    }
+
+    .saved-note strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .saved-note small {
+      display: block;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .delete-note {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .cta {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .button {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-weight: 700;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #05202a;
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 22px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #86a8b3;
+      margin-top: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="brand">
+      <div class="logo-box">SR</div>
+      <div>
+        <div class="brand-text">Salty Reef</div>
+        <div style="font-size:13px;color:#a8c3cc;">Smart Guide</div>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="badge">Hanna Checker Alkalinity</div>
+      <h1>KH meten in 5 stappen</h1>
+      <p class="intro">Gebruik deze korte handleiding voor een consistente alkalinity-meting.</p>
+    </section>
+
+    <h2 class="section-title">Stappenplan</h2>
+
+    <section class="steps">
+      <div class="step">
+        <div class="number">1</div>
+        <strong>Cuvet voorbereiden</strong>
+        <span>Spoel met aquariumwater, vul tot 10 ml en droog de buitenkant goed af.</span>
+      </div>
+
+      <div class="step">
+        <div class="number">2</div>
+        <strong>Nulmeting uitvoeren</strong>
+        <span>Plaats de cuvet in de checker, sluit de deksel en druk op de knop.</span>
+      </div>
+
+      <div class="step">
+        <div class="number">3</div>
+        <strong>Reagens toevoegen</strong>
+        <span>Haal de cuvet eruit en voeg de voorgeschreven hoeveelheid testreagens toe.</span>
+      </div>
+
+      <div class="step">
+        <div class="number">4</div>
+        <strong>Goed mengen</strong>
+        <span>Sluit de cuvet en meng rustig. Voorkom luchtbellen op het meetvlak.</span>
+      </div>
+
+      <div class="step">
+        <div class="number">5</div>
+        <strong>Meting uitvoeren</strong>
+        <span>Plaats de cuvet terug, druk op de knop en lees de KH-waarde af.</span>
+      </div>
+    </section>
+
+    <section class="tips">
+      <h2>Belangrijke tips</h2>
+      <ul>
+        <li>Raak het meetvlak van de cuvet niet met je vingers aan.</li>
+        <li>Meet bij voorkeur telkens rond hetzelfde tijdstip.</li>
+        <li>Gebruik steeds dezelfde werkwijze voor betrouwbare vergelijkingen.</li>
+      </ul>
+    </section>
+
+    <section class="notes" id="notes">
+      <h2>Notitie toevoegen</h2>
+      <p>Noteer snel je KH-waarde of een korte opmerking. Deze notities worden alleen op dit apparaat opgeslagen.</p>
+
+      <div class="note-form">
+        <input id="khValue" type="text" placeholder="KH waarde, bijv. 8.1 dKH" />
+        <textarea id="noteText" rows="3" placeholder="Opmerking, bijv. dosering aangepast of gemeten na waterwissel"></textarea>
+        <button class="button primary" type="button" onclick="saveNote()">+ Notitie opslaan</button>
+      </div>
+
+      <div id="notesList" class="notes-list"></div>
+    </section>
+
+    <section class="cta">
+      <a class="button primary" href="#notes">+ Noteer je meting</a>
+      <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank" rel="noopener noreferrer">Bezoek Salty Reef</a>
+    </section>
+
+    <p class="small">Notities blijven lokaal op je telefoon staan en worden niet online opgeslagen.</p>
+    <footer class="footer">© Salty Reef | Scan & Test systeem</footer>
+  </main>
+  <script>
+    const storageKey = 'saltyReefKhNotes';
+
+    function getNotes() {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey)) || [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveNote() {
+      const khValue = document.getElementById('khValue').value.trim();
+      const noteText = document.getElementById('noteText').value.trim();
+
+      if (!khValue && !noteText) {
+        alert('Vul eerst een KH-waarde of notitie in.');
+        return;
+      }
+
+      const notes = getNotes();
+      notes.unshift({
+        khValue,
+        noteText,
+        date: new Date().toLocaleString('nl-NL')
+      });
+
+      localStorage.setItem(storageKey, JSON.stringify(notes));
+      document.getElementById('khValue').value = '';
+      document.getElementById('noteText').value = '';
+      renderNotes();
+    }
+
+    function deleteNote(index) {
+      const notes = getNotes();
+      notes.splice(index, 1);
+      localStorage.setItem(storageKey, JSON.stringify(notes));
+      renderNotes();
+    }
+
+    function renderNotes() {
+      const notesList = document.getElementById('notesList');
+      const notes = getNotes();
+
+      if (!notes.length) {
+        notesList.innerHTML = '';
+        return;
+      }
+
+      notesList.innerHTML = notes.map((note, index) => `
+        <div class="saved-note">
+          ${note.khValue ? `<strong>${escapeHtml(note.khValue)}</strong>` : ''}
+          ${note.noteText ? `<div>${escapeHtml(note.noteText)}</div>` : ''}
+          <small>${escapeHtml(note.date)}</small>
+          <button class="delete-note" type="button" onclick="deleteNote(${index})">Verwijderen</button>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    renderNotes();
+  </script>
+</body>
+</html>
