@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salty Reef - Calcium</title>
+
+<style>
+body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px;}
+.container { max-width:500px; margin:auto; }
+.card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px;}
+h1 { margin:0 0 10px; }
+.step { margin-bottom:10px; }
+input, textarea {
+  width:100%; padding:10px; margin-top:5px;
+  border-radius:8px; border:none; background:#0b1f2a; color:white;
+}
+button {
+  padding:10px; border:none; border-radius:8px;
+  background:#00c2ff; color:black; font-weight:bold;
+}
+.note { background:#0b1f2a; padding:10px; border-radius:8px; margin-top:10px;}
+a.button {
+  display:block; text-align:center; padding:10px;
+  border-radius:8px; text-decoration:none;
+  margin-top:10px;
+}
+.primary { background:#00c2ff; color:black;}
+.secondary { background:#112c3a; color:white;}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card">
+<h1>Calcium meten</h1>
+<p>Volg deze stappen voor een correcte meting.</p>
+</div>
+
+<div class="card">
+<div class="step"><b>1.</b> Vul cuvet met 10 ml aquariumwater</div>
+<div class="step"><b>2.</b> Voeg 1 ml Reagens A toe</div>
+<div class="step"><b>3.</b> Meng voorzichtig</div>
+<div class="step"><b>4.</b> Voeg Reagens B toe</div>
+<div class="step"><b>5.</b> Nulmeting (C1)</div>
+<div class="step"><b>6.</b> Voeg Reagens C toe</div>
+<div class="step"><b>7.</b> Meting uitvoeren (C2)</div>
+</div>
+
+<div class="card">
+<h3>Notitie toevoegen</h3>
+<input id="value" placeholder="Waarde (ppm)">
+<textarea id="note" placeholder="Opmerking"></textarea>
+<button onclick="saveNote()">Opslaan</button>
+
+<div id="notes"></div>
+</div>
+
+<a class="button primary" href="#notes">+ Noteer je meting</a>
+<a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">Bezoek Salty Reef</a>
+
+</div>
+
+<script>
+const key="ca_notes";
+
+function saveNote(){
+  let value=document.getElementById("value").value;
+  let note=document.getElementById("note").value;
+
+  let data=JSON.parse(localStorage.getItem(key)||"[]");
+  data.unshift({value,note,date:new Date().toLocaleString()});
+  localStorage.setItem(key,JSON.stringify(data));
+
+  document.getElementById("value").value="";
+  document.getElementById("note").value="";
+  loadNotes();
+}
+
+function loadNotes(){
+  let data=JSON.parse(localStorage.getItem(key)||"[]");
+  let html="";
+  data.forEach((n,i)=>{
+    html+=`<div class="note"><b>${n.value||""}</b><br>${n.note||""}<br><small>${n.date}</small></div>`;
+  });
+  document.getElementById("notes").innerHTML=html;
+}
+
+loadNotes();
+</script>
+
+</body>
+</html>
