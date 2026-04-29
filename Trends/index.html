@@ -25,6 +25,19 @@ canvas { width:100%; height:240px; background:#0b1f2a; border-radius:10px; }
 
 <div class="card">
   <h1>Salty Reef Trends</h1>
+  <p class="small">Bekijk je opgeslagen metingen op dit apparaat.</p>
+</div>
+
+<div class="card">
+  <h2>KH</h2>
+  <canvas id="khChart"></canvas>
+  <p id="khInfo" class="small"></p>
+</div>
+
+<div class="card">
+  <h2>Calcium</h2>
+  <canvas id="caChart"></canvas>
+  <p id="caInfo" class="small"></p>
 </div>
 
 <div class="card">
@@ -38,13 +51,27 @@ canvas { width:100%; height:240px; background:#0b1f2a; border-radius:10px; }
 </div>
 
 <script>
-function getData(){
-  return JSON.parse(localStorage.getItem("po4_notes") || "[]");
+function getData(key){
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch(e) {
+    return [];
+  }
 }
 
-function drawChart(data){
-  const canvas = document.getElementById("po4Chart");
-  const info = document.getElementById("po4Info");
+function normalize(data){
+  return data
+    .map(item => ({
+      value: parseFloat(item.value),
+      date: item.date || ""
+    }))
+    .filter(item => !isNaN(item.value))
+    .reverse();
+}
+
+function drawChart(canvasId, infoId, data, unit){
+  const canvas = document.getElementById(canvasId);
+  const info = document.getElementById(infoId);
   const ctx = canvas.getContext("2d");
 
   canvas.width = canvas.clientWidth * 2;
@@ -56,12 +83,20 @@ function drawChart(data){
 
   ctx.clearRect(0,0,w,h);
 
+  ctx.strokeStyle = "#24495a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h - pad);
+  ctx.lineTo(w - pad, h - pad);
+  ctx.stroke();
+
   if(data.length < 2){
-    info.textContent = "Minimaal 2 metingen nodig";
+    info.textContent = "Minimaal 2 metingen nodig voor een grafiek. Gevonden: " + data.length;
     return;
   }
 
-  const values = data.map(d => parseFloat(d.value));
+  const values = data.map(d => d.value);
   let min = Math.min(...values);
   let max = Math.max(...values);
 
@@ -82,7 +117,7 @@ function drawChart(data){
   ctx.lineWidth = 4;
   ctx.beginPath();
 
-  values.forEach((v,i)=>{
+  values.forEach((v, i) => {
     if(i === 0) ctx.moveTo(x(i), y(v));
     else ctx.lineTo(x(i), y(v));
   });
@@ -90,29 +125,43 @@ function drawChart(data){
   ctx.stroke();
 
   ctx.fillStyle = "#00c2ff";
-  values.forEach((v,i)=>{
+  values.forEach((v, i) => {
     ctx.beginPath();
     ctx.arc(x(i), y(v), 6, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // highlight laatste punt
   const last = values[values.length - 1];
+
   ctx.fillStyle = "lime";
   ctx.beginPath();
   ctx.arc(x(values.length - 1), y(last), 10, 0, Math.PI * 2);
   ctx.fill();
 
-  // labels
   ctx.fillStyle = "#b9d7e0";
   ctx.font = "22px Arial";
   ctx.fillText(max.toFixed(2), 8, pad);
   ctx.fillText(min.toFixed(2), 8, h - pad);
 
-  info.textContent = "Laatste waarde: " + last + " ppm PO4";
+  const first = values[0];
+  const diff = +(last - first).toFixed(3);
+
+  let trend = "stabiel";
+  if(diff > 0) trend = "stijgend";
+  if(diff < 0) trend = "dalend";
+
+  info.textContent =
+    data.length + " metingen • laatste: " + last + " " + unit +
+    " • trend: " + trend + " (" + (diff > 0 ? "+" : "") + diff + ")";
 }
 
-drawChart(getData().reverse());
+const khData = normalize(getData("kh_notes"));
+const caData = normalize(getData("ca_notes"));
+const po4Data = normalize(getData("po4_notes"));
+
+drawChart("khChart", "khInfo", khData, "dKH");
+drawChart("caChart", "caInfo", caData, "ppm");
+drawChart("po4Chart", "po4Info", po4Data, "ppm PO4");
 </script>
 
 </body>
