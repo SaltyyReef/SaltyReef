@@ -109,6 +109,8 @@ input, textarea {
 <script>
 const key = "ca_notes";
 let editIndex = null;
+const smartType = new URLSearchParams(window.location.search).get("smart");
+const isSmart = smartType === "ca";
 
 function getStatus(ca){
   if(ca < 400){
