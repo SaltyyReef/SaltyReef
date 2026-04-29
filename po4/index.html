@@ -10,13 +10,14 @@ body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20
 .container { max-width:500px; margin:auto; }
 .card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px; }
 h1 { margin:0 0 10px; }
+.step { margin-bottom:8px; }
 input {
-  width:100%; padding:12px; border-radius:10px; border:none;
-  background:#0b1f2a; color:white; margin-top:10px;
+  width:100%; padding:12px; border-radius:10px;
+  border:none; background:#0b1f2a; color:white; margin-top:10px;
 }
 .button {
-  display:block; text-align:center; padding:12px; border-radius:10px;
-  text-decoration:none; margin-top:10px;
+  display:block; text-align:center; padding:12px;
+  border-radius:10px; text-decoration:none; margin-top:10px;
 }
 .primary { background:#00c2ff; color:black; font-weight:bold; }
 .secondary { background:#112c3a; color:white; border:1px solid #00c2ff; }
@@ -28,19 +29,40 @@ input {
 <body>
 <div class="container">
 
+<!-- Titel -->
 <div class="card">
-  <h1>PO4 meten</h1>
-  <p>Hanna Phosphorus ULR</p>
-  <p class="small">Voer de Hanna waarde in als <b>ppb fosfor</b>. De pagina rekent dit om naar ppm PO4.</p>
+  <h1>PO4 meten (ULR)</h1>
+  <p class="small">Hanna Phosphorus ULR (HI736)</p>
 </div>
 
+<!-- Instructies -->
 <div class="card">
-  <input id="value" type="number" step="1" placeholder="Bijv. 25 ppb">
+  <h3>Stappenplan</h3>
+
+  <div class="step"><b>1.</b> Spoel de cuvet met aquariumwater</div>
+  <div class="step"><b>2.</b> Vul tot 10 ml en droog de buitenkant</div>
+  <div class="step"><b>3.</b> Plaats in checker en doe nulmeting (C1)</div>
+  <div class="step"><b>4.</b> Voeg HI736 reagent toe</div>
+  <div class="step"><b>5.</b> Schud 2 minuten tot opgelost</div>
+  <div class="step"><b>6.</b> Plaats terug en start meting (C2)</div>
+  <div class="step"><b>7.</b> Lees waarde af in ppb fosfor</div>
+
+</div>
+
+<!-- Invoer -->
+<div class="card">
+  <h3>Waarde invoeren</h3>
+
+  <input id="value" type="number" step="1" placeholder="Bijv. 25 (ppb)">
   <button class="button primary" onclick="save()">Opslaan</button>
+
   <div id="result" class="status"></div>
   <div id="status" class="status"></div>
+
+  <p class="small">De waarde wordt automatisch omgerekend naar ppm PO4</p>
 </div>
 
+<!-- Navigatie -->
 <a class="button secondary" href="../Trends/">Bekijk trends</a>
 <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
   Bezoek Salty Reef
