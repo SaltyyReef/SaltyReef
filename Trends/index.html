@@ -12,11 +12,11 @@ body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20
 h1, h2 { margin-top:0; }
 canvas { width:100%; height:240px; background:#0b1f2a; border-radius:10px; }
 .small { color:#b9d7e0; font-size:14px; }
-a.button {
+.button {
   display:block; text-align:center; padding:12px;
   border-radius:8px; text-decoration:none; margin-top:10px;
+  background:#00c2ff; color:black; font-weight:bold;
 }
-.primary { background:#00c2ff; color:black; font-weight:bold; }
 </style>
 </head>
 
@@ -25,86 +25,56 @@ a.button {
 
 <div class="card">
   <h1>Salty Reef Trends</h1>
-  <p class="small">Bekijk lokale trends van opgeslagen metingen op dit apparaat.</p>
+  <p class="small">Trends worden lokaal geladen vanaf dit apparaat.</p>
 </div>
 
 <div class="card">
-  <h2>KH trend</h2>
+  <h2>KH</h2>
   <canvas id="khChart"></canvas>
   <p id="khInfo" class="small"></p>
 </div>
 
 <div class="card">
-  <h2>Calcium trend</h2>
+  <h2>Calcium</h2>
   <canvas id="caChart"></canvas>
   <p id="caInfo" class="small"></p>
 </div>
 
 <div class="card">
-  <h2>PO4 trend</h2>
+  <h2>PO4</h2>
   <canvas id="po4Chart"></canvas>
   <p id="po4Info" class="small"></p>
 </div>
 
-<a class="button primary" href="../">Terug naar Smart Guide</a>
+<a class="button" href="../">Terug naar startpagina</a>
 
 </div>
 
 <script>
-function getStoredNotes(keys) {
-  let all = [];
-
-  keys.forEach(key => {
-    try {
-      const data = JSON.parse(localStorage.getItem(key) || "[]");
-      if (Array.isArray(data)) all = all.concat(data);
-    } catch(e) {}
-  });
-
-  return all;
+function getData(key){
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch(e) {
+    return [];
+  }
 }
 
-function extractNumber(text) {
-  if (!text) return null;
-  const match = String(text).replace(",", ".").match(/-?\d+(\.\d+)?/);
-  return match ? parseFloat(match[0]) : null;
+function normalize(data){
+  return data
+    .map(item => ({
+      value: parseFloat(item.value),
+      date: item.date || ""
+    }))
+    .filter(item => !isNaN(item.value))
+    .reverse();
 }
 
-function extractPO4(text) {
-  if (!text) return null;
-  const clean = String(text).replace(",", ".");
-
-  const ppmMatch = clean.match(/(\d+(\.\d+)?)\s*ppm/i);
-  if (ppmMatch) return parseFloat(ppmMatch[1]);
-
-  const ppb = extractNumber(clean);
-  if (ppb === null) return null;
-
-  return +(ppb * 3.066 / 1000).toFixed(3);
-}
-
-function normalizeNotes(notes, type) {
-  return notes.map(n => {
-    let rawValue = n.khValue || n.value || "";
-    let value = type === "po4" ? extractPO4(rawValue) : extractNumber(rawValue);
-    let date = n.date ? new Date(n.date) : new Date();
-
-    return {
-      value,
-      date,
-      label: n.date || ""
-    };
-  })
-  .filter(n => n.value !== null && !isNaN(n.date.getTime()))
-  .sort((a,b) => a.date - b.date);
-}
-
-function drawChart(canvasId, infoId, data, unit) {
+function drawChart(canvasId, infoId, data, unit){
   const canvas = document.getElementById(canvasId);
   const info = document.getElementById(infoId);
   const ctx = canvas.getContext("2d");
 
-  canvas.width = canvas.offsetWidth * 2;
+  canvas.width = canvas.clientWidth * 2;
   canvas.height = 240 * 2;
 
   const w = canvas.width;
@@ -112,17 +82,17 @@ function drawChart(canvasId, infoId, data, unit) {
   const pad = 50;
 
   ctx.clearRect(0,0,w,h);
+
   ctx.strokeStyle = "#24495a";
   ctx.lineWidth = 2;
-
   ctx.beginPath();
   ctx.moveTo(pad, pad);
   ctx.lineTo(pad, h - pad);
   ctx.lineTo(w - pad, h - pad);
   ctx.stroke();
 
-  if (data.length < 2) {
-    info.textContent = "Nog te weinig metingen voor een trendgrafiek.";
+  if(data.length < 2){
+    info.textContent = "Minimaal 2 metingen nodig voor een grafiek. Gevonden: " + data.length;
     return;
   }
 
@@ -130,16 +100,16 @@ function drawChart(canvasId, infoId, data, unit) {
   let min = Math.min(...values);
   let max = Math.max(...values);
 
-  if (min === max) {
+  if(min === max){
     min -= 1;
     max += 1;
   }
 
-  function x(i) {
+  function x(i){
     return pad + (i / (data.length - 1)) * (w - pad * 2);
   }
 
-  function y(v) {
+  function y(v){
     return h - pad - ((v - min) / (max - min)) * (h - pad * 2);
   }
 
@@ -147,55 +117,45 @@ function drawChart(canvasId, infoId, data, unit) {
   ctx.lineWidth = 4;
   ctx.beginPath();
 
-  data.forEach((d,i) => {
-    if (i === 0) ctx.moveTo(x(i), y(d.value));
-    else ctx.lineTo(x(i), y(d.value));
+  data.forEach((point, i) => {
+    if(i === 0) ctx.moveTo(x(i), y(point.value));
+    else ctx.lineTo(x(i), y(point.value));
   });
 
   ctx.stroke();
 
   ctx.fillStyle = "#00c2ff";
-  data.forEach((d,i) => {
+  data.forEach((point, i) => {
     ctx.beginPath();
-    ctx.arc(x(i), y(d.value), 6, 0, Math.PI * 2);
+    ctx.arc(x(i), y(point.value), 6, 0, Math.PI * 2);
     ctx.fill();
   });
 
   ctx.fillStyle = "#b9d7e0";
-  ctx.font = "24px Arial";
-  ctx.fillText(max.toFixed(2), 8, pad);
-  ctx.fillText(min.toFixed(2), 8, h - pad);
+  ctx.font = "22px Arial";
+  ctx.fillText(max.toFixed(3), 8, pad);
+  ctx.fillText(min.toFixed(3), 8, h - pad);
 
   const first = data[0].value;
   const last = data[data.length - 1].value;
   const diff = +(last - first).toFixed(3);
 
-  let direction = diff > 0 ? "stijgend" : diff < 0 ? "dalend" : "stabiel";
+  let trend = "stabiel";
+  if(diff > 0) trend = "stijgend";
+  if(diff < 0) trend = "dalend";
 
   info.textContent =
-    data.length + " metingen • laatste waarde: " +
-    last + " " + unit + " • trend: " + direction +
-    " (" + (diff > 0 ? "+" : "") + diff + ")";
+    data.length + " metingen • laatste: " + last + " " + unit +
+    " • trend: " + trend + " (" + (diff > 0 ? "+" : "") + diff + ")";
 }
 
-const khNotes = normalizeNotes(
-  getStoredNotes(["saltyReefKhNotes", "kh_notes"]),
-  "kh"
-);
+const khData = normalize(getData("kh_notes"));
+const caData = normalize(getData("ca_notes"));
+const po4Data = normalize(getData("po4_notes"));
 
-const caNotes = normalizeNotes(
-  getStoredNotes(["ca_notes"]),
-  "ca"
-);
-
-const po4Notes = normalizeNotes(
-  getStoredNotes(["po4_notes"]),
-  "po4"
-);
-
-drawChart("khChart", "khInfo", khNotes, "dKH");
-drawChart("caChart", "caInfo", caNotes, "ppm");
-drawChart("po4Chart", "po4Info", po4Notes, "ppm PO4");
+drawChart("khChart", "khInfo", khData, "dKH");
+drawChart("caChart", "caInfo", caData, "ppm");
+drawChart("po4Chart", "po4Info", po4Data, "ppm PO4");
 </script>
 
 </body>
