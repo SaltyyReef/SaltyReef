@@ -107,12 +107,26 @@ function toPO4(ppb){
 
 function getStatus(po4){
   if(po4 < 0.03){
-    return { text: "Te laag", color: "red" };
+    return {
+      text: "Te laag",
+      color: "red",
+      advice: "Let op: PO4 is erg laag. Te lage PO4 kan koralen stress geven en ongewenste balansproblemen veroorzaken."
+    };
   }
+
   if(po4 <= 0.10){
-    return { text: "Goed", color: "lime" };
+    return {
+      text: "Goed",
+      color: "lime",
+      advice: "Deze waarde valt binnen een praktische richtlijn voor veel reef aquaria."
+    };
   }
-  return { text: "Te hoog", color: "orange" };
+
+  return {
+    text: "Te hoog",
+    color: "orange",
+    advice: "Overweeg fosfaatreductie, bijvoorbeeld minder voeren, beter exporteren of fosfaatmedia gecontroleerd inzetten."
+  };
 }
 
 function getData(){
@@ -121,6 +135,19 @@ function getData(){
 
 function setData(data){
   localStorage.setItem(key, JSON.stringify(data));
+}
+
+function showResult(ppb){
+  const po4 = toPO4(ppb);
+  const status = getStatus(po4);
+
+  document.getElementById("result").innerHTML =
+    ppb + " ppb P = " + po4 + " ppm PO4";
+
+  document.getElementById("status").innerHTML =
+    `<span style="color:${status.color}">Status: ${status.text}</span><br><small>${status.advice}</small>`;
+
+  return { po4, status };
 }
 
 function saveMeasurement(){
@@ -132,18 +159,16 @@ function saveMeasurement(){
     return;
   }
 
-  const po4 = toPO4(ppb);
-  const status = getStatus(po4);
+  const result = showResult(ppb);
+  const data = getData();
 
   const measurement = {
-    value: po4,
+    value: result.po4,
     ppb: ppb,
     note: note,
-    date: editIndex === null ? new Date().toLocaleString("nl-NL") : getData()[editIndex].date,
+    date: editIndex === null ? new Date().toLocaleString("nl-NL") : data[editIndex].date,
     updated: editIndex === null ? null : new Date().toLocaleString("nl-NL")
   };
-
-  const data = getData();
 
   if(editIndex === null){
     data.unshift(measurement);
@@ -152,13 +177,6 @@ function saveMeasurement(){
   }
 
   setData(data);
-
-  document.getElementById("result").innerHTML =
-    ppb + " ppb P = " + po4 + " ppm PO4";
-
-  document.getElementById("status").innerHTML =
-    `<span style="color:${status.color}">Status: ${status.text}</span>`;
-
   resetForm();
   renderMeasurements();
 }
@@ -174,10 +192,12 @@ function renderMeasurements(){
 
   list.innerHTML = data.map((item, index) => {
     const status = getStatus(parseFloat(item.value));
+
     return `
       <div class="note">
         <b>${item.ppb} ppb P = ${item.value} ppm PO4</b><br>
         <span style="color:${status.color}; font-weight:bold;">Status: ${status.text}</span><br>
+        <small>${status.advice}</small>
         ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
         <small>Gemeten: ${item.date}</small>
         ${item.updated ? `<br><small>Aangepast: ${item.updated}</small>` : ""}
@@ -197,14 +217,7 @@ function editMeasurement(index){
   document.getElementById("ppbInput").value = item.ppb;
   document.getElementById("noteInput").value = item.note || "";
 
-  const po4 = toPO4(item.ppb);
-  const status = getStatus(po4);
-
-  document.getElementById("result").innerHTML =
-    item.ppb + " ppb P = " + po4 + " ppm PO4";
-
-  document.getElementById("status").innerHTML =
-    `<span style="color:${status.color}">Status: ${status.text}</span>`;
+  showResult(item.ppb);
 
   editIndex = index;
 
@@ -231,7 +244,6 @@ function cancelEdit(){
 function resetForm(){
   document.getElementById("ppbInput").value = "";
   document.getElementById("noteInput").value = "";
-
   document.getElementById("result").innerHTML = "";
   document.getElementById("status").innerHTML = "";
 
