@@ -112,6 +112,8 @@ input, textarea {
 // jouw bestaande JS blijft exact hetzelfde (niet aangepast)
 const key = "po4_notes";
 let editIndex = null;
+const smartType = new URLSearchParams(window.location.search).get("smart");
+const isSmart = smartType === "po4";
 
 // ... rest blijft ongewijzigd ...
 </script>
