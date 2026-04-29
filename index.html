@@ -1,81 +1,325 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salty Reef Smart Guide</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salty Reef Smart Guide</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background:#0b1f2a;
-      color:white;
-      text-align:center;
-      padding:40px 20px;
-      margin:0;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#0b1f2a;
+  color:white;
+  margin:0;
+  padding:20px;
+}
 
-    .logo {
-      width:110px;
-      max-width:45%;
-      margin-bottom:18px;
-      border-radius:12px;
-      filter: drop-shadow(0 0 8px rgba(0,194,255,0.45));
-    }
+.container {
+  max-width:560px;
+  margin:auto;
+  text-align:center;
+}
 
-    h1 {
-      margin-bottom:10px;
-    }
+.logo {
+  width:110px;
+  max-width:45%;
+  margin-bottom:15px;
+  border-radius:12px;
+  filter: drop-shadow(0 0 8px rgba(0,194,255,0.45));
+}
 
-    .subtitle {
-      color:#9cc3d1;
-      margin-bottom:30px;
-    }
+.card {
+  background:#112c3a;
+  padding:20px;
+  border-radius:14px;
+  margin-bottom:15px;
+  text-align:left;
+}
 
-    .button {
-      display:block;
-      max-width:300px;
-      margin:12px auto;
-      padding:16px;
-      border-radius:12px;
-      text-decoration:none;
-      font-size:18px;
-      font-weight:bold;
-    }
+.hero {
+  text-align:center;
+}
 
-    .primary {
-      background:#00c2ff;
-      color:black;
-    }
+h1 {
+  margin:10px 0;
+}
 
-    .secondary {
-      background:#112c3a;
-      color:white;
-      border:1px solid #00c2ff;
-    }
-  </style>
+.subtitle, .small {
+  color:#b9d7e0;
+  font-size:14px;
+}
+
+.grid {
+  display:grid;
+  gap:12px;
+}
+
+.value-card {
+  background:#0b1f2a;
+  padding:15px;
+  border-radius:12px;
+  border:1px solid rgba(0,194,255,0.35);
+}
+
+.value-title {
+  font-weight:bold;
+  font-size:18px;
+}
+
+.value {
+  margin-top:6px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.status {
+  margin-top:6px;
+  font-weight:bold;
+}
+
+.warning-box {
+  background:#0b1f2a;
+  border-left:4px solid #ffb703;
+  padding:12px;
+  border-radius:8px;
+  margin-top:10px;
+}
+
+.button {
+  display:block;
+  text-align:center;
+  padding:13px;
+  border-radius:10px;
+  text-decoration:none;
+  margin-top:10px;
+  font-weight:bold;
+  border:none;
+  cursor:pointer;
+  font-size:16px;
+}
+
+.primary {
+  background:#00c2ff;
+  color:black;
+}
+
+.secondary {
+  background:#112c3a;
+  color:white;
+  border:1px solid #00c2ff;
+}
+
+input[type="file"] {
+  display:none;
+}
+</style>
 </head>
 
 <body>
+<div class="container">
 
-  <!-- LOGO -->
-  <img src="./IMG_1010.jpeg" alt="Salty Reef logo" class="logo">
+  <div class="hero">
+    <img src="./IMG_1010.jpeg" alt="Salty Reef logo" class="logo">
+    <h1>Salty Reef Smart Guide</h1>
+    <p class="subtitle">Scan • Meet • Noteer • Volg trends</p>
+  </div>
 
-  <!-- TITEL -->
-  <h1>Salty Reef Smart Guide</h1>
-  <p class="subtitle">Scan • Meet • Noteer • Volg trends</p>
+  <div class="card">
+    <h2>Dashboard</h2>
+    <div class="grid">
 
-  <!-- KNOPPEN -->
-  <a class="button primary" href="./kh/">KH meten</a>
-  <a class="button primary" href="./ca/">Calcium meten</a>
-  <a class="button primary" href="./po4/">PO4 meten (ULR)</a>
-  <a class="button secondary" href="./Trends/">📊 Trends bekijken</a>
+      <div class="value-card">
+        <div class="value-title">🧪 KH</div>
+        <div id="khValue" class="value">Laden...</div>
+        <div id="khStatus" class="status"></div>
+        <a class="button primary" href="./kh/">KH meten</a>
+      </div>
 
-  <br>
+      <div class="value-card">
+        <div class="value-title">🪸 Calcium</div>
+        <div id="caValue" class="value">Laden...</div>
+        <div id="caStatus" class="status"></div>
+        <a class="button primary" href="./ca/">Calcium meten</a>
+      </div>
 
-  <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
-    🌊 Bezoek Salty Reef
-  </a>
+      <div class="value-card">
+        <div class="value-title">💧 PO4 ULR</div>
+        <div id="po4Value" class="value">Laden...</div>
+        <div id="po4Status" class="status"></div>
+        <a class="button primary" href="./po4/">PO4 meten</a>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Waarschuwingen</h2>
+    <div id="warnings"></div>
+  </div>
+
+  <div class="card">
+    <h2>Analyse</h2>
+    <a class="button secondary" href="./Trends/">📊 Trends bekijken</a>
+  </div>
+
+  <div class="card">
+    <h2>Back-up & sync</h2>
+    <p class="small">
+      Exporteer je data als back-up of importeer deze later op een ander apparaat.
+    </p>
+
+    <button class="button primary" onclick="exportData()">⬇ Data exporteren</button>
+
+    <label class="button secondary" for="importFile">⬆ Data importeren</label>
+    <input id="importFile" type="file" accept=".json" onchange="importData(event)">
+  </div>
+
+  <div class="card">
+    <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
+      🌊 Bezoek Salty Reef
+    </a>
+  </div>
+
+  <p class="small">Gegevens worden lokaal opgeslagen op dit apparaat.</p>
+
+</div>
+
+<script>
+function getData(key){
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch(e) {
+    return [];
+  }
+}
+
+function latest(key){
+  const data = getData(key);
+  return data.length ? data[0] : null;
+}
+
+function statusKH(value){
+  if(value < 7) return { text:"Te laag", color:"red" };
+  if(value <= 9) return { text:"Goed", color:"lime" };
+  return { text:"Te hoog", color:"orange" };
+}
+
+function statusCA(value){
+  if(value < 400) return { text:"Te laag", color:"red" };
+  if(value <= 460) return { text:"Goed", color:"lime" };
+  return { text:"Te hoog", color:"orange" };
+}
+
+function statusPO4(value){
+  if(value < 0.03) return { text:"Te laag", color:"red" };
+  if(value <= 0.10) return { text:"Goed", color:"lime" };
+  return { text:"Te hoog", color:"orange" };
+}
+
+function setStatus(id, status){
+  document.getElementById(id).innerHTML =
+    `<span style="color:${status.color}">Status: ${status.text}</span>`;
+}
+
+function loadDashboard(){
+  const kh = latest("kh_notes");
+  const ca = latest("ca_notes");
+  const po4 = latest("po4_notes");
+
+  const warnings = [];
+
+  if(kh){
+    document.getElementById("khValue").innerText = kh.value + " dKH";
+    const s = statusKH(parseFloat(kh.value));
+    setStatus("khStatus", s);
+    if(s.text !== "Goed") warnings.push("KH is " + s.text.toLowerCase() + ".");
+  } else {
+    document.getElementById("khValue").innerText = "Nog geen meting";
+    document.getElementById("khStatus").innerText = "";
+  }
+
+  if(ca){
+    document.getElementById("caValue").innerText = ca.value + " ppm";
+    const s = statusCA(parseFloat(ca.value));
+    setStatus("caStatus", s);
+    if(s.text !== "Goed") warnings.push("Calcium is " + s.text.toLowerCase() + ".");
+  } else {
+    document.getElementById("caValue").innerText = "Nog geen meting";
+    document.getElementById("caStatus").innerText = "";
+  }
+
+  if(po4){
+    document.getElementById("po4Value").innerText =
+      po4.value + " ppm PO4" + (po4.ppb ? " (" + po4.ppb + " ppb P)" : "");
+    const s = statusPO4(parseFloat(po4.value));
+    setStatus("po4Status", s);
+    if(s.text !== "Goed") warnings.push("PO4 is " + s.text.toLowerCase() + ".");
+  } else {
+    document.getElementById("po4Value").innerText = "Nog geen meting";
+    document.getElementById("po4Status").innerText = "";
+  }
+
+  renderWarnings(warnings);
+}
+
+function renderWarnings(warnings){
+  const box = document.getElementById("warnings");
+
+  if(warnings.length === 0){
+    box.innerHTML = '<p class="small">Geen waarschuwingen. Alles lijkt binnen de ingestelde richtwaarden te vallen.</p>';
+    return;
+  }
+
+  box.innerHTML = warnings.map(w => `
+    <div class="warning-box">${w}</div>
+  `).join("");
+}
+
+function exportData(){
+  const backup = {
+    exportedAt: new Date().toLocaleString("nl-NL"),
+    kh_notes: getData("kh_notes"),
+    ca_notes: getData("ca_notes"),
+    po4_notes: getData("po4_notes")
+  };
+
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "salty-reef-backup.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    try {
+      const backup = JSON.parse(e.target.result);
+
+      if(backup.kh_notes) localStorage.setItem("kh_notes", JSON.stringify(backup.kh_notes));
+      if(backup.ca_notes) localStorage.setItem("ca_notes", JSON.stringify(backup.ca_notes));
+      if(backup.po4_notes) localStorage.setItem("po4_notes", JSON.stringify(backup.po4_notes));
+
+      alert("Data succesvol geïmporteerd.");
+      loadDashboard();
+    } catch(error) {
+      alert("Import mislukt. Controleer of dit een geldige Salty Reef back-up is.");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+loadDashboard();
+</script>
 
 </body>
 </html>
