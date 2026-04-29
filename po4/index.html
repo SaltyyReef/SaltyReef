@@ -3,30 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Salty Reef - Phosphorus ULR</title>
+<title>Salty Reef - PO4 ULR</title>
 
 <style>
-body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px;}
+body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px; }
 .container { max-width:500px; margin:auto; }
-.card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px;}
+.card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px; }
 h1 { margin:0 0 10px; }
-.step { margin-bottom:10px; }
-input, textarea {
-  width:100%; padding:10px; margin-top:5px;
-  border-radius:8px; border:none; background:#0b1f2a; color:white;
+input {
+  width:100%; padding:12px; border-radius:10px; border:none;
+  background:#0b1f2a; color:white; margin-top:10px;
 }
-button {
-  width:100%; padding:10px; border:none; border-radius:8px;
-  background:#00c2ff; color:black; font-weight:bold; margin-top:8px;
+.button {
+  display:block; text-align:center; padding:12px; border-radius:10px;
+  text-decoration:none; margin-top:10px;
 }
-.note { background:#0b1f2a; padding:10px; border-radius:8px; margin-top:10px;}
-.result { font-size:20px; font-weight:bold; color:#00c2ff; margin-top:10px;}
-a.button {
-  display:block; text-align:center; padding:10px;
-  border-radius:8px; text-decoration:none; margin-top:10px;
-}
-.primary { background:#00c2ff; color:black;}
-.secondary { background:#112c3a; color:white; border:1px solid #00c2ff;}
+.primary { background:#00c2ff; color:black; font-weight:bold; }
+.secondary { background:#112c3a; color:white; border:1px solid #00c2ff; }
+.status { margin-top:10px; font-weight:bold; }
 .small { color:#b9d7e0; font-size:14px; }
 </style>
 </head>
@@ -35,98 +29,74 @@ a.button {
 <div class="container">
 
 <div class="card">
-<h1>Phosphorus ULR meten</h1>
-<p>Hanna HI736 – fosfor meten en omrekenen naar fosfaat (PO4).</p>
+  <h1>PO4 meten</h1>
+  <p>Hanna Phosphorus ULR</p>
+  <p class="small">Voer de Hanna waarde in als <b>ppb fosfor</b>. De pagina rekent dit om naar ppm PO4.</p>
 </div>
 
 <div class="card">
-<h3>Stappenplan</h3>
-<div class="step"><b>1.</b> Spoel de cuvet met aquariumwater.</div>
-<div class="step"><b>2.</b> Vul tot 10 ml en droog de buitenkant goed af.</div>
-<div class="step"><b>3.</b> Plaats de cuvet in de checker en voer de nulmeting uit (C1).</div>
-<div class="step"><b>4.</b> Voeg 1 zakje HI736 reagens toe.</div>
-<div class="step"><b>5.</b> Schud rustig 2 minuten tot het poeder is opgelost.</div>
-<div class="step"><b>6.</b> Plaats de cuvet terug en houd de knop ingedrukt tot de 3 minuten timer start.</div>
-<div class="step"><b>7.</b> Lees de waarde af in ppb fosfor (ppb P).</div>
+  <input id="value" type="number" step="1" placeholder="Bijv. 25 ppb">
+  <button class="button primary" onclick="save()">Opslaan</button>
+  <div id="result" class="status"></div>
+  <div id="status" class="status"></div>
 </div>
 
-<div class="card">
-<h3>Omrekenen naar PO4</h3>
-<p class="small">De Hanna HI736 geeft fosfor weer in ppb. Voor fosfaat gebruik je:</p>
-<p><b>PO4 ppm = ppb P × 3.066 ÷ 1000</b></p>
-
-<input id="ppbValue" type="number" placeholder="Vul waarde in, bijv. 25">
-<button onclick="calculatePo4()">Bereken PO4</button>
-<div id="po4Result" class="result"></div>
-</div>
-
-<div class="card">
-<h3>Richtwaarde</h3>
-<p class="small">
-Voor veel reef aquaria is een PO4-waarde rond <b>0.03 – 0.10 ppm</b> een praktische richtlijn.
-Stabiliteit is belangrijker dan één losse meting.
-</p>
-</div>
-
-<div class="card">
-<h3>Belangrijke tips</h3>
-<p class="small">
-• Raak het meetvlak van de cuvet niet met je vingers aan.<br>
-• Let op luchtbellen na het schudden.<br>
-• Gebruik steeds dezelfde cuvetpositie in de checker.<br>
-• Gooi het monster na de meting direct weg.
-</p>
-</div>
-
-<div class="card">
-<h3>Notitie toevoegen</h3>
-<input id="value" placeholder="Waarde, bijv. 25 ppb P / 0.077 ppm PO4">
-<textarea id="note" placeholder="Opmerking"></textarea>
-<button onclick="saveNote()">Opslaan</button>
-<div id="notes"></div>
-</div>
-
-<a class="button primary" href="#notes">+ Noteer je meting</a>
-<a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">Bezoek Salty Reef</a>
+<a class="button secondary" href="../Trends/">Bekijk trends</a>
+<a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
+  Bezoek Salty Reef
+</a>
 
 </div>
 
 <script>
-const key="po4_notes";
+const key = "po4_notes";
 
-function calculatePo4(){
-  let ppb = parseFloat(document.getElementById("ppbValue").value);
-  if(isNaN(ppb)){
-    document.getElementById("po4Result").innerHTML = "Vul eerst een waarde in.";
-    return;
+function toPO4(ppb){
+  return +(ppb * 3.066 / 1000).toFixed(3);
+}
+
+function check(po4){
+  let status = "";
+  let color = "";
+
+  if(po4 < 0.03){
+    status = "Te laag";
+    color = "red";
   }
-  let po4 = (ppb * 3.066 / 1000).toFixed(3);
-  document.getElementById("po4Result").innerHTML = ppb + " ppb P = " + po4 + " ppm PO4";
+  else if(po4 <= 0.10){
+    status = "Goed";
+    color = "lime";
+  }
+  else{
+    status = "Te hoog";
+    color = "orange";
+  }
+
+  document.getElementById("status").innerHTML =
+    `<span style="color:${color}">Status: ${status}</span>`;
 }
 
-function saveNote(){
-  let value=document.getElementById("value").value;
-  let note=document.getElementById("note").value;
+function save(){
+  let ppb = parseFloat(document.getElementById("value").value);
+  if(isNaN(ppb)) return;
 
-  let data=JSON.parse(localStorage.getItem(key)||"[]");
-  data.unshift({value,note,date:new Date().toLocaleString("nl-NL")});
-  localStorage.setItem(key,JSON.stringify(data));
+  let po4 = toPO4(ppb);
 
-  document.getElementById("value").value="";
-  document.getElementById("note").value="";
-  loadNotes();
-}
+  document.getElementById("result").innerHTML =
+    ppb + " ppb P = " + po4 + " ppm PO4";
 
-function loadNotes(){
-  let data=JSON.parse(localStorage.getItem(key)||"[]");
-  let html="";
-  data.forEach((n)=>{
-    html+=`<div class="note"><b>${n.value||""}</b><br>${n.note||""}<br><small>${n.date}</small></div>`;
+  let data = JSON.parse(localStorage.getItem(key) || "[]");
+
+  data.unshift({
+    value: po4,
+    ppb: ppb,
+    date: new Date().toLocaleString("nl-NL")
   });
-  document.getElementById("notes").innerHTML=html;
-}
 
-loadNotes();
+  localStorage.setItem(key, JSON.stringify(data));
+
+  check(po4);
+}
 </script>
 
 </body>
