@@ -11,59 +11,80 @@ body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20
 .card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px; }
 h1 { margin:0 0 10px; }
 .step { margin-bottom:8px; }
-input {
+input, textarea {
   width:100%; padding:12px; border-radius:10px;
   border:none; background:#0b1f2a; color:white; margin-top:10px;
+  box-sizing:border-box;
 }
 .button {
   display:block; text-align:center; padding:12px;
   border-radius:10px; text-decoration:none; margin-top:10px;
+  border:none; cursor:pointer; font-weight:bold;
 }
-.primary { background:#00c2ff; color:black; font-weight:bold; }
+.primary { background:#00c2ff; color:black; }
 .secondary { background:#112c3a; color:white; border:1px solid #00c2ff; }
+.warning { background:#ffb703; color:black; }
+.danger { background:#d62828; color:white; }
 .status { margin-top:10px; font-weight:bold; }
 .small { color:#b9d7e0; font-size:14px; }
+.note {
+  background:#0b1f2a;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+}
+.note-actions {
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.note-actions button {
+  flex:1;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<!-- Titel -->
 <div class="card">
   <h1>PO4 meten (ULR)</h1>
-  <p class="small">Hanna Phosphorus ULR (HI736)</p>
+  <p class="small">Hanna Phosphorus ULR HI736</p>
 </div>
 
-<!-- Instructies -->
 <div class="card">
   <h3>Stappenplan</h3>
-
-  <div class="step"><b>1.</b> Spoel de cuvet met aquariumwater</div>
-  <div class="step"><b>2.</b> Vul tot 10 ml en droog de buitenkant</div>
-  <div class="step"><b>3.</b> Plaats in checker en doe nulmeting (C1)</div>
-  <div class="step"><b>4.</b> Voeg HI736 reagent toe</div>
-  <div class="step"><b>5.</b> Schud 2 minuten tot opgelost</div>
-  <div class="step"><b>6.</b> Plaats terug en start meting (C2)</div>
-  <div class="step"><b>7.</b> Lees waarde af in ppb fosfor</div>
-
+  <div class="step"><b>1.</b> Spoel de cuvet met aquariumwater.</div>
+  <div class="step"><b>2.</b> Vul tot 10 ml en droog de buitenkant goed af.</div>
+  <div class="step"><b>3.</b> Plaats in de checker en voer de nulmeting uit.</div>
+  <div class="step"><b>4.</b> Voeg 1 zakje HI736 reagens toe.</div>
+  <div class="step"><b>5.</b> Schud rustig 2 minuten tot het poeder is opgelost.</div>
+  <div class="step"><b>6.</b> Plaats terug en start de meting.</div>
+  <div class="step"><b>7.</b> Lees de waarde af in ppb fosfor.</div>
 </div>
 
-<!-- Invoer -->
 <div class="card">
-  <h3>Waarde invoeren</h3>
+  <h3 id="formTitle">Nieuwe meting toevoegen</h3>
 
-  <input id="value" type="number" step="1" placeholder="Bijv. 25 (ppb)">
-  <button class="button primary" onclick="save()">Opslaan</button>
+  <input id="ppbInput" type="number" step="1" placeholder="Waarde in ppb P, bijv. 25">
+  <textarea id="noteInput" rows="3" placeholder="Opmerking, bijv. gevoerd, waterwissel, rowaphos vervangen"></textarea>
+
+  <button id="saveButton" class="button primary" onclick="saveMeasurement()">Opslaan</button>
+  <button id="cancelButton" class="button secondary" onclick="cancelEdit()" style="display:none;">Annuleren</button>
 
   <div id="result" class="status"></div>
   <div id="status" class="status"></div>
 
-  <p class="small">De waarde wordt automatisch omgerekend naar ppm PO4</p>
+  <p class="small">De waarde wordt automatisch omgerekend naar ppm PO4.</p>
 </div>
 
-<!-- Navigatie -->
+<div class="card">
+  <h3>Opgeslagen metingen</h3>
+  <div id="measurementsList"></div>
+</div>
+
 <a class="button secondary" href="../Trends/">Bekijk trends</a>
+<a class="button secondary" href="../">Terug naar startpagina</a>
 <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
   Bezoek Salty Reef
 </a>
@@ -72,53 +93,147 @@ input {
 
 <script>
 const key = "po4_notes";
+let editIndex = null;
 
 function toPO4(ppb){
   return +(ppb * 3.066 / 1000).toFixed(3);
 }
 
-function check(po4){
-  let status = "";
-  let color = "";
-
+function getStatus(po4){
   if(po4 < 0.03){
-    status = "Te laag";
-    color = "red";
+    return { text: "Te laag", color: "red" };
   }
-  else if(po4 <= 0.10){
-    status = "Goed";
-    color = "lime";
+  if(po4 <= 0.10){
+    return { text: "Goed", color: "lime" };
   }
-  else{
-    status = "Te hoog";
-    color = "orange";
-  }
-
-  document.getElementById("status").innerHTML =
-    `<span style="color:${color}">Status: ${status}</span>`;
+  return { text: "Te hoog", color: "orange" };
 }
 
-function save(){
-  let ppb = parseFloat(document.getElementById("value").value);
-  if(isNaN(ppb)) return;
+function getData(){
+  return JSON.parse(localStorage.getItem(key) || "[]");
+}
 
-  let po4 = toPO4(ppb);
+function setData(data){
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function saveMeasurement(){
+  const ppb = parseFloat(document.getElementById("ppbInput").value);
+  const note = document.getElementById("noteInput").value.trim();
+
+  if(isNaN(ppb)){
+    alert("Vul eerst een geldige ppb waarde in.");
+    return;
+  }
+
+  const po4 = toPO4(ppb);
+  const status = getStatus(po4);
+
+  const measurement = {
+    value: po4,
+    ppb: ppb,
+    note: note,
+    date: editIndex === null ? new Date().toLocaleString("nl-NL") : getData()[editIndex].date,
+    updated: editIndex === null ? null : new Date().toLocaleString("nl-NL")
+  };
+
+  const data = getData();
+
+  if(editIndex === null){
+    data.unshift(measurement);
+  } else {
+    data[editIndex] = measurement;
+  }
+
+  setData(data);
 
   document.getElementById("result").innerHTML =
     ppb + " ppb P = " + po4 + " ppm PO4";
 
-  let data = JSON.parse(localStorage.getItem(key) || "[]");
+  document.getElementById("status").innerHTML =
+    `<span style="color:${status.color}">Status: ${status.text}</span>`;
 
-  data.unshift({
-    value: po4,
-    ppb: ppb,
-    date: new Date().toLocaleString("nl-NL")
-  });
-
-  localStorage.setItem(key, JSON.stringify(data));
-
-  check(po4);
+  resetForm();
+  renderMeasurements();
 }
+
+function renderMeasurements(){
+  const data = getData();
+  const list = document.getElementById("measurementsList");
+
+  if(data.length === 0){
+    list.innerHTML = '<p class="small">Nog geen metingen opgeslagen.</p>';
+    return;
+  }
+
+  list.innerHTML = data.map((item, index) => {
+    const status = getStatus(parseFloat(item.value));
+    return `
+      <div class="note">
+        <b>${item.ppb} ppb P = ${item.value} ppm PO4</b><br>
+        <span style="color:${status.color}; font-weight:bold;">Status: ${status.text}</span><br>
+        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+        <small>Gemeten: ${item.date}</small>
+        ${item.updated ? `<br><small>Aangepast: ${item.updated}</small>` : ""}
+        <div class="note-actions">
+          <button class="button warning" onclick="editMeasurement(${index})">Aanpassen</button>
+          <button class="button danger" onclick="deleteMeasurement(${index})">Verwijderen</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function editMeasurement(index){
+  const data = getData();
+  const item = data[index];
+
+  document.getElementById("ppbInput").value = item.ppb;
+  document.getElementById("noteInput").value = item.note || "";
+
+  editIndex = index;
+
+  document.getElementById("formTitle").innerText = "Meting aanpassen";
+  document.getElementById("saveButton").innerText = "Wijziging opslaan";
+  document.getElementById("cancelButton").style.display = "block";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deleteMeasurement(index){
+  if(!confirm("Weet je zeker dat je deze meting wilt verwijderen?")) return;
+
+  const data = getData();
+  data.splice(index, 1);
+  setData(data);
+  renderMeasurements();
+}
+
+function cancelEdit(){
+  resetForm();
+}
+
+function resetForm(){
+  document.getElementById("ppbInput").value = "";
+  document.getElementById("noteInput").value = "";
+
+  editIndex = null;
+
+  document.getElementById("formTitle").innerText = "Nieuwe meting toevoegen";
+  document.getElementById("saveButton").innerText = "Opslaan";
+  document.getElementById("cancelButton").style.display = "none";
+}
+
+function escapeHtml(text){
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+renderMeasurements();
 </script>
 
 </body>
