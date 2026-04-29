@@ -111,6 +111,8 @@ input, textarea {
 <script>
 const key = "kh_notes";
 let editIndex = null;
+const smartType = new URLSearchParams(window.location.search).get("smart");
+const isSmart = smartType === "kh";
 
 function getStatus(kh){
   if(kh < 7){
