@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salty Reef - Trends</title>
+
+<style>
+body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px; }
+.container { max-width:700px; margin:auto; }
+.card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px; }
+h1, h2 { margin-top:0; }
+canvas { width:100%; height:240px; background:#0b1f2a; border-radius:10px; }
+.small { color:#b9d7e0; font-size:14px; }
+a.button {
+  display:block; text-align:center; padding:12px;
+  border-radius:8px; text-decoration:none; margin-top:10px;
+}
+.primary { background:#00c2ff; color:black; font-weight:bold; }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card">
+  <h1>Salty Reef Trends</h1>
+  <p class="small">Bekijk lokale trends van opgeslagen metingen op dit apparaat.</p>
+</div>
+
+<div class="card">
+  <h2>KH trend</h2>
+  <canvas id="khChart"></canvas>
+  <p id="khInfo" class="small"></p>
+</div>
+
+<div class="card">
+  <h2>Calcium trend</h2>
+  <canvas id="caChart"></canvas>
+  <p id="caInfo" class="small"></p>
+</div>
+
+<div class="card">
+  <h2>PO4 trend</h2>
+  <canvas id="po4Chart"></canvas>
+  <p id="po4Info" class="small"></p>
+</div>
+
+<a class="button primary" href="../">Terug naar Smart Guide</a>
+
+</div>
+
+<script>
+function getStoredNotes(keys) {
+  let all = [];
+
+  keys.forEach(key => {
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      if (Array.isArray(data)) all = all.concat(data);
+    } catch(e) {}
+  });
+
+  return all;
+}
+
+function extractNumber(text) {
+  if (!text) return null;
+  const match = String(text).replace(",", ".").match(/-?\d+(\.\d+)?/);
+  return match ? parseFloat(match[0]) : null;
+}
+
+function extractPO4(text) {
+  if (!text) return null;
+  const clean = String(text).replace(",", ".");
+
+  const ppmMatch = clean.match(/(\d+(\.\d+)?)\s*ppm/i);
+  if (ppmMatch) return parseFloat(ppmMatch[1]);
+
+  const ppb = extractNumber(clean);
+  if (ppb === null) return null;
+
+  return +(ppb * 3.066 / 1000).toFixed(3);
+}
+
+function normalizeNotes(notes, type) {
+  return notes.map(n => {
+    let rawValue = n.khValue || n.value || "";
+    let value = type === "po4" ? extractPO4(rawValue) : extractNumber(rawValue);
+    let date = n.date ? new Date(n.date) : new Date();
+
+    return {
+      value,
+      date,
+      label: n.date || ""
+    };
+  })
+  .filter(n => n.value !== null && !isNaN(n.date.getTime()))
+  .sort((a,b) => a.date - b.date);
+}
+
+function drawChart(canvasId, infoId, data, unit) {
+  const canvas = document.getElementById(canvasId);
+  const info = document.getElementById(infoId);
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 240 * 2;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 50;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = "#24495a";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h - pad);
+  ctx.lineTo(w - pad, h - pad);
+  ctx.stroke();
+
+  if (data.length < 2) {
+    info.textContent = "Nog te weinig metingen voor een trendgrafiek.";
+    return;
+  }
+
+  const values = data.map(d => d.value);
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  if (min === max) {
+    min -= 1;
+    max += 1;
+  }
+
+  function x(i) {
+    return pad + (i / (data.length - 1)) * (w - pad * 2);
+  }
+
+  function y(v) {
+    return h - pad - ((v - min) / (max - min)) * (h - pad * 2);
+  }
+
+  ctx.strokeStyle = "#00c2ff";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+
+  data.forEach((d,i) => {
+    if (i === 0) ctx.moveTo(x(i), y(d.value));
+    else ctx.lineTo(x(i), y(d.value));
+  });
+
+  ctx.stroke();
+
+  ctx.fillStyle = "#00c2ff";
+  data.forEach((d,i) => {
+    ctx.beginPath();
+    ctx.arc(x(i), y(d.value), 6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = "#b9d7e0";
+  ctx.font = "24px Arial";
+  ctx.fillText(max.toFixed(2), 8, pad);
+  ctx.fillText(min.toFixed(2), 8, h - pad);
+
+  const first = data[0].value;
+  const last = data[data.length - 1].value;
+  const diff = +(last - first).toFixed(3);
+
+  let direction = diff > 0 ? "stijgend" : diff < 0 ? "dalend" : "stabiel";
+
+  info.textContent =
+    data.length + " metingen • laatste waarde: " +
+    last + " " + unit + " • trend: " + direction +
+    " (" + (diff > 0 ? "+" : "") + diff + ")";
+}
+
+const khNotes = normalizeNotes(
+  getStoredNotes(["saltyReefKhNotes", "kh_notes"]),
+  "kh"
+);
+
+const caNotes = normalizeNotes(
+  getStoredNotes(["ca_notes"]),
+  "ca"
+);
+
+const po4Notes = normalizeNotes(
+  getStoredNotes(["po4_notes"]),
+  "po4"
+);
+
+drawChart("khChart", "khInfo", khNotes, "dKH");
+drawChart("caChart", "caInfo", caNotes, "ppm");
+drawChart("po4Chart", "po4Info", po4Notes, "ppm PO4");
+</script>
+
+</body>
+</html>
