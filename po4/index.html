@@ -26,10 +26,21 @@ input, textarea {
   box-sizing:border-box;
 }
 
+input:disabled,
+textarea:disabled {
+  opacity:0.55;
+  cursor:not-allowed;
+}
+
 .button {
   display:block; text-align:center; padding:12px;
   border-radius:10px; text-decoration:none; margin-top:10px;
   border:none; cursor:pointer; font-weight:bold;
+}
+
+button:disabled {
+  opacity:0.45;
+  cursor:not-allowed;
 }
 
 .primary { background:#00c2ff; color:black; }
@@ -39,6 +50,30 @@ input, textarea {
 
 .status { margin-top:10px; font-weight:bold; }
 .small { color:#b9d7e0; font-size:14px; text-align:center; }
+
+.lockbox {
+  background:#2a220b;
+  border:1px solid #ffb703;
+  color:#ffd166;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  text-align:center;
+  font-size:14px;
+  display:none;
+}
+
+.unlockbox {
+  background:#0b2a1d;
+  border:1px solid #2dd4bf;
+  color:#8fffe8;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  text-align:center;
+  font-size:14px;
+  display:none;
+}
 
 .note {
   background:#0b1f2a;
@@ -69,6 +104,12 @@ input, textarea {
   <h1>PO4 meten (ULR)</h1>
   <p class="small">Hanna Phosphorus ULR HI736</p>
   <p class="small">Voer je meting in en volg de trend in de grafiek.</p>
+  <div id="lockedMessage" class="lockbox">
+    🔒 Metingen toevoegen is vergrendeld. Scan de juiste Salty Reef NFC-tag om deze pagina volledig te gebruiken.
+  </div>
+  <div id="unlockedMessage" class="unlockbox">
+    ✅ NFC-tag herkend. Je kunt PO4-metingen toevoegen en aanpassen.
+  </div>
 </div>
 
 <div class="card">
@@ -109,13 +150,205 @@ input, textarea {
 </div>
 
 <script>
-// jouw bestaande JS blijft exact hetzelfde (niet aangepast)
 const key = "po4_notes";
 let editIndex = null;
+
 const smartType = new URLSearchParams(window.location.search).get("smart");
 const isSmart = smartType === "po4";
 
-// ... rest blijft ongewijzigd ...
+const ppbInput = document.getElementById("ppbInput");
+const noteInput = document.getElementById("noteInput");
+const saveButton = document.getElementById("saveButton");
+const cancelButton = document.getElementById("cancelButton");
+const formTitle = document.getElementById("formTitle");
+const result = document.getElementById("result");
+const statusText = document.getElementById("status");
+const measurementsList = document.getElementById("measurementsList");
+const lockedMessage = document.getElementById("lockedMessage");
+const unlockedMessage = document.getElementById("unlockedMessage");
+
+function initPage() {
+  if (isSmart) {
+    unlockedMessage.style.display = "block";
+    lockedMessage.style.display = "none";
+  } else {
+    lockedMessage.style.display = "block";
+    unlockedMessage.style.display = "none";
+
+    ppbInput.disabled = true;
+    noteInput.disabled = true;
+    saveButton.disabled = true;
+    saveButton.innerText = "Scan NFC-tag om op te slaan";
+    formTitle.innerText = "Meting toevoegen vergrendeld";
+    statusText.innerText = "Deze pagina is alleen volledig actief via de juiste PO4 NFC-tag.";
+  }
+
+  renderMeasurements();
+}
+
+function getMeasurements() {
+  const saved = localStorage.getItem(key);
+  return saved ? JSON.parse(saved) : [];
+}
+
+function setMeasurements(measurements) {
+  localStorage.setItem(key, JSON.stringify(measurements));
+}
+
+function ppbToPpmPo4(ppb) {
+  return (ppb * 3.066) / 1000;
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString("nl-NL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function saveMeasurement() {
+  if (!isSmart) {
+    statusText.innerText = "Scan eerst de juiste Salty Reef NFC-tag.";
+    return;
+  }
+
+  const ppb = Number(ppbInput.value);
+  const note = noteInput.value.trim();
+
+  if (!ppbInput.value || isNaN(ppb) || ppb < 0) {
+    statusText.innerText = "Vul een geldige ppb-waarde in.";
+    return;
+  }
+
+  const ppm = ppbToPpmPo4(ppb);
+  const measurements = getMeasurements();
+
+  const measurement = {
+    date: editIndex === null ? new Date().toISOString() : measurements[editIndex].date,
+    ppb: ppb,
+    value: ppb,
+    ppm: Number(ppm.toFixed(3)),
+    po4: Number(ppm.toFixed(3)),
+    note: note
+  };
+
+  if (editIndex === null) {
+    measurements.push(measurement);
+    statusText.innerText = "Meting opgeslagen.";
+  } else {
+    measurements[editIndex] = measurement;
+    statusText.innerText = "Meting bijgewerkt.";
+  }
+
+  setMeasurements(measurements);
+
+  result.innerText = `${ppb} ppb fosfor = ${ppm.toFixed(3)} ppm PO4`;
+
+  ppbInput.value = "";
+  noteInput.value = "";
+  editIndex = null;
+  formTitle.innerText = "Nieuwe meting toevoegen";
+  saveButton.innerText = "Opslaan";
+  cancelButton.style.display = "none";
+
+  renderMeasurements();
+}
+
+function renderMeasurements() {
+  const measurements = getMeasurements();
+  measurementsList.innerHTML = "";
+
+  if (measurements.length === 0) {
+    measurementsList.innerHTML = `<p class="small">Nog geen metingen opgeslagen.</p>`;
+    return;
+  }
+
+  measurements
+    .map((measurement, index) => ({ measurement, index }))
+    .reverse()
+    .forEach(({ measurement, index }) => {
+      const ppb = measurement.ppb ?? measurement.value ?? 0;
+      const ppm = measurement.ppm ?? measurement.po4 ?? ppbToPpmPo4(ppb);
+      const note = measurement.note ? measurement.note : "Geen opmerking";
+      const date = measurement.date ? formatDate(measurement.date) : "Onbekende datum";
+
+      const div = document.createElement("div");
+      div.className = "note";
+
+      div.innerHTML = `
+        <b>${date}</b><br>
+        Waarde: <b>${ppb} ppb P</b><br>
+        Omrekening: <b>${Number(ppm).toFixed(3)} ppm PO4</b><br>
+        Opmerking: ${escapeHtml(note)}
+        ${isSmart ? `
+          <div class="note-actions">
+            <button class="button warning" onclick="editMeasurement(${index})">Bewerken</button>
+            <button class="button danger" onclick="deleteMeasurement(${index})">Verwijderen</button>
+          </div>
+        ` : ""}
+      `;
+
+      measurementsList.appendChild(div);
+    });
+}
+
+function editMeasurement(index) {
+  if (!isSmart) return;
+
+  const measurements = getMeasurements();
+  const measurement = measurements[index];
+
+  ppbInput.value = measurement.ppb ?? measurement.value ?? "";
+  noteInput.value = measurement.note ?? "";
+  editIndex = index;
+
+  formTitle.innerText = "Meting bewerken";
+  saveButton.innerText = "Wijziging opslaan";
+  cancelButton.style.display = "block";
+  statusText.innerText = "Je bewerkt een bestaande meting.";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function cancelEdit() {
+  ppbInput.value = "";
+  noteInput.value = "";
+  editIndex = null;
+
+  formTitle.innerText = "Nieuwe meting toevoegen";
+  saveButton.innerText = "Opslaan";
+  cancelButton.style.display = "none";
+  statusText.innerText = "Bewerken geannuleerd.";
+}
+
+function deleteMeasurement(index) {
+  if (!isSmart) return;
+
+  const confirmed = confirm("Weet je zeker dat je deze meting wilt verwijderen?");
+  if (!confirmed) return;
+
+  const measurements = getMeasurements();
+  measurements.splice(index, 1);
+  setMeasurements(measurements);
+
+  statusText.innerText = "Meting verwijderd.";
+  renderMeasurements();
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+initPage();
 </script>
 
 </body>
