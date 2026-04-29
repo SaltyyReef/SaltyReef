@@ -6,62 +6,47 @@
 <title>Salty Reef - Calcium</title>
 
 <style>
-body {
-  font-family: Arial;
-  background:#0b1f2a;
-  color:white;
-  margin:0;
-  padding:20px;
-}
-
-.container {
-  max-width:500px;
-  margin:auto;
-}
-
-.card {
-  background:#112c3a;
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:15px;
-}
-
+body { font-family: Arial; background:#0b1f2a; color:white; margin:0; padding:20px; }
+.container { max-width:500px; margin:auto; }
+.card { background:#112c3a; padding:20px; border-radius:12px; margin-bottom:15px; }
 h1 { margin:0 0 10px; }
+.step { margin-bottom:8px; }
 
-input {
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  background:#0b1f2a;
-  color:white;
-  margin-top:10px;
+input, textarea {
+  width:100%; padding:12px; border-radius:10px;
+  border:none; background:#0b1f2a; color:white; margin-top:10px;
+  box-sizing:border-box;
 }
 
 .button {
-  display:block;
-  text-align:center;
+  display:block; text-align:center; padding:12px;
+  border-radius:10px; text-decoration:none; margin-top:10px;
+  border:none; cursor:pointer; font-weight:bold;
+}
+
+.primary { background:#00c2ff; color:black; }
+.secondary { background:#112c3a; color:white; border:1px solid #00c2ff; }
+.warning { background:#ffb703; color:black; }
+.danger { background:#d62828; color:white; }
+
+.status { margin-top:10px; font-weight:bold; }
+.small { color:#b9d7e0; font-size:14px; }
+
+.note {
+  background:#0b1f2a;
   padding:12px;
   border-radius:10px;
-  text-decoration:none;
   margin-top:10px;
 }
 
-.primary {
-  background:#00c2ff;
-  color:black;
-  font-weight:bold;
-}
-
-.secondary {
-  background:#112c3a;
-  color:white;
-  border:1px solid #00c2ff;
-}
-
-.status {
+.note-actions {
+  display:flex;
+  gap:8px;
   margin-top:10px;
-  font-weight:bold;
+}
+
+.note-actions button {
+  flex:1;
 }
 </style>
 </head>
@@ -71,16 +56,40 @@ input {
 
 <div class="card">
   <h1>Calcium meten</h1>
-  <p>Voer je calcium waarde in (ppm)</p>
+  <p class="small">Hanna Calcium Checker</p>
+  <p class="small">Voer je meting in en volg de trend in de grafiek.</p>
 </div>
 
 <div class="card">
-  <input id="value" type="number" step="1" placeholder="Bijv. 430">
-  <button class="button primary" onclick="save()">Opslaan</button>
+  <h3>Stappenplan</h3>
+  <div class="step"><b>1.</b> Spoel de cuvet met aquariumwater.</div>
+  <div class="step"><b>2.</b> Vul volgens instructie en droog de buitenkant.</div>
+  <div class="step"><b>3.</b> Plaats in de checker en voer de nulmeting uit.</div>
+  <div class="step"><b>4.</b> Voeg reagenten toe volgens Hanna handleiding.</div>
+  <div class="step"><b>5.</b> Meng voorzichtig tot alles opgelost is.</div>
+  <div class="step"><b>6.</b> Plaats terug en voer de meting uit.</div>
+  <div class="step"><b>7.</b> Lees de waarde af in ppm.</div>
+</div>
+
+<div class="card">
+  <h3 id="formTitle">Nieuwe meting toevoegen</h3>
+
+  <input id="caInput" type="number" step="1" placeholder="Bijv. 430 ppm">
+  <textarea id="noteInput" rows="3" placeholder="Opmerking"></textarea>
+
+  <button id="saveButton" class="button primary" onclick="saveMeasurement()">Opslaan</button>
+  <button id="cancelButton" class="button secondary" onclick="cancelEdit()" style="display:none;">Annuleren</button>
+
   <div id="status" class="status"></div>
 </div>
 
+<div class="card">
+  <h3>Opgeslagen metingen</h3>
+  <div id="measurementsList"></div>
+</div>
+
 <a class="button secondary" href="../Trends/">Bekijk trends</a>
+<a class="button secondary" href="../">Terug naar startpagina</a>
 <a class="button secondary" href="https://www.facebook.com/people/Salty-Reef/61583895151144/" target="_blank">
   Bezoek Salty Reef
 </a>
@@ -88,44 +97,145 @@ input {
 </div>
 
 <script>
-const key="ca_notes";
+const key = "ca_notes";
+let editIndex = null;
 
-function check(value){
-  let status = "";
-  let color = "";
+function getStatus(ca){
+  if(ca < 400){
+    return { text: "Te laag", color: "red" };
+  }
+  if(ca <= 460){
+    return { text: "Goed", color: "lime" };
+  }
+  return { text: "Te hoog", color: "orange" };
+}
 
-  if(value < 400){
-    status = "Te laag";
-    color = "red";
+function getData(){
+  return JSON.parse(localStorage.getItem(key) || "[]");
+}
+
+function setData(data){
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function saveMeasurement(){
+  const ca = parseFloat(document.getElementById("caInput").value);
+  const note = document.getElementById("noteInput").value.trim();
+
+  if(isNaN(ca)){
+    alert("Vul eerst een geldige calcium waarde in.");
+    return;
   }
-  else if(value <= 460){
-    status = "Goed";
-    color = "lime";
+
+  const status = getStatus(ca);
+
+  const measurement = {
+    value: ca,
+    note: note,
+    date: editIndex === null ? new Date().toLocaleString("nl-NL") : getData()[editIndex].date,
+    updated: editIndex === null ? null : new Date().toLocaleString("nl-NL")
+  };
+
+  const data = getData();
+
+  if(editIndex === null){
+    data.unshift(measurement);
+  } else {
+    data[editIndex] = measurement;
   }
-  else{
-    status = "Te hoog";
-    color = "orange";
-  }
+
+  setData(data);
 
   document.getElementById("status").innerHTML =
-    `<span style="color:${color}">Status: ${status}</span>`;
+    `<span style="color:${status.color}">Status: ${status.text}</span>`;
+
+  resetForm();
+  renderMeasurements();
 }
 
-function save(){
-  let value = parseFloat(document.getElementById("value").value);
-  if(isNaN(value)) return;
+function renderMeasurements(){
+  const data = getData();
+  const list = document.getElementById("measurementsList");
 
-  let data = JSON.parse(localStorage.getItem(key) || "[]");
+  if(data.length === 0){
+    list.innerHTML = '<p class="small">Nog geen metingen opgeslagen.</p>';
+    return;
+  }
 
-  data.unshift({
-    value: value,
-    date: new Date().toLocaleString("nl-NL")
-  });
-
-  localStorage.setItem(key, JSON.stringify(data));
-
-  check(value);
+  list.innerHTML = data.map((item, index) => {
+    const status = getStatus(parseFloat(item.value));
+    return `
+      <div class="note">
+        <b>${item.value} ppm</b><br>
+        <span style="color:${status.color}; font-weight:bold;">Status: ${status.text}</span><br>
+        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+        <small>Gemeten: ${item.date}</small>
+        ${item.updated ? `<br><small>Aangepast: ${item.updated}</small>` : ""}
+        <div class="note-actions">
+          <button class="button warning" onclick="editMeasurement(${index})">Aanpassen</button>
+          <button class="button danger" onclick="deleteMeasurement(${index})">Verwijderen</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
+
+function editMeasurement(index){
+  const data = getData();
+  const item = data[index];
+
+  document.getElementById("caInput").value = item.value;
+  document.getElementById("noteInput").value = item.note || "";
+
+  const status = getStatus(parseFloat(item.value));
+
+  document.getElementById("status").innerHTML =
+    `<span style="color:${status.color}">Status: ${status.text}</span>`;
+
+  editIndex = index;
+
+  document.getElementById("formTitle").innerText = "Meting aanpassen";
+  document.getElementById("saveButton").innerText = "Wijziging opslaan";
+  document.getElementById("cancelButton").style.display = "block";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deleteMeasurement(index){
+  if(!confirm("Weet je zeker dat je deze meting wilt verwijderen?")) return;
+
+  const data = getData();
+  data.splice(index, 1);
+  setData(data);
+  renderMeasurements();
+}
+
+function cancelEdit(){
+  resetForm();
+}
+
+function resetForm(){
+  document.getElementById("caInput").value = "";
+  document.getElementById("noteInput").value = "";
+  document.getElementById("status").innerHTML = "";
+
+  editIndex = null;
+
+  document.getElementById("formTitle").innerText = "Nieuwe meting toevoegen";
+  document.getElementById("saveButton").innerText = "Opslaan";
+  document.getElementById("cancelButton").style.display = "none";
+}
+
+function escapeHtml(text){
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+renderMeasurements();
 </script>
 
 </body>
