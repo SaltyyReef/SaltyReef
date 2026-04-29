@@ -27,10 +27,21 @@ input, textarea {
   box-sizing:border-box;
 }
 
+input:disabled,
+textarea:disabled {
+  opacity:0.55;
+  cursor:not-allowed;
+}
+
 .button {
   display:block; text-align:center; padding:12px;
   border-radius:10px; text-decoration:none; margin-top:10px;
   border:none; cursor:pointer; font-weight:bold;
+}
+
+button:disabled {
+  opacity:0.45;
+  cursor:not-allowed;
 }
 
 .primary { background:#00c2ff; color:black; }
@@ -40,6 +51,30 @@ input, textarea {
 
 .status { margin-top:10px; font-weight:bold; }
 .small { color:#b9d7e0; font-size:14px; text-align:center; }
+
+.lockbox {
+  background:#2a220b;
+  border:1px solid #ffb703;
+  color:#ffd166;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  text-align:center;
+  font-size:14px;
+  display:none;
+}
+
+.unlockbox {
+  background:#0b2a1d;
+  border:1px solid #2dd4bf;
+  color:#8fffe8;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  text-align:center;
+  font-size:14px;
+  display:none;
+}
 
 .note {
   background:#0b1f2a;
@@ -70,6 +105,12 @@ input, textarea {
   <h1>KH meten</h1>
   <p class="small">Hanna Alkalinity Checker</p>
   <p class="small">Voer je meting in en volg de trend in de grafiek.</p>
+  <div id="lockedMessage" class="lockbox">
+    🔒 Metingen toevoegen is vergrendeld. Scan de juiste Salty Reef NFC-tag om deze pagina volledig te gebruiken.
+  </div>
+  <div id="unlockedMessage" class="unlockbox">
+    ✅ NFC-tag herkend. Je kunt KH-metingen toevoegen en aanpassen.
+  </div>
 </div>
 
 <div class="card">
@@ -111,8 +152,38 @@ input, textarea {
 <script>
 const key = "kh_notes";
 let editIndex = null;
+
 const smartType = new URLSearchParams(window.location.search).get("smart");
 const isSmart = smartType === "kh";
+
+const khInput = document.getElementById("khInput");
+const noteInput = document.getElementById("noteInput");
+const saveButton = document.getElementById("saveButton");
+const cancelButton = document.getElementById("cancelButton");
+const formTitle = document.getElementById("formTitle");
+const statusText = document.getElementById("status");
+const measurementsList = document.getElementById("measurementsList");
+const lockedMessage = document.getElementById("lockedMessage");
+const unlockedMessage = document.getElementById("unlockedMessage");
+
+function initPage(){
+  if(isSmart){
+    unlockedMessage.style.display = "block";
+    lockedMessage.style.display = "none";
+  } else {
+    lockedMessage.style.display = "block";
+    unlockedMessage.style.display = "none";
+
+    khInput.disabled = true;
+    noteInput.disabled = true;
+    saveButton.disabled = true;
+    saveButton.innerText = "Scan NFC-tag om op te slaan";
+    formTitle.innerText = "Meting toevoegen vergrendeld";
+    statusText.innerText = "Deze pagina is alleen volledig actief via de juiste KH NFC-tag.";
+  }
+
+  renderMeasurements();
+}
 
 function getStatus(kh){
   if(kh < 7){
@@ -133,8 +204,13 @@ function setData(data){
 }
 
 function saveMeasurement(){
-  const kh = parseFloat(document.getElementById("khInput").value);
-  const note = document.getElementById("noteInput").value.trim();
+  if(!isSmart){
+    statusText.innerText = "Scan eerst de juiste Salty Reef NFC-tag.";
+    return;
+  }
+
+  const kh = parseFloat(khInput.value);
+  const note = noteInput.value.trim();
 
   if(isNaN(kh)){
     alert("Vul eerst een geldige KH waarde in.");
@@ -142,15 +218,14 @@ function saveMeasurement(){
   }
 
   const status = getStatus(kh);
+  const data = getData();
 
   const measurement = {
     value: kh,
     note: note,
-    date: editIndex === null ? new Date().toLocaleString("nl-NL") : getData()[editIndex].date,
+    date: editIndex === null ? new Date().toLocaleString("nl-NL") : data[editIndex].date,
     updated: editIndex === null ? null : new Date().toLocaleString("nl-NL")
   };
-
-  const data = getData();
 
   if(editIndex === null){
     data.unshift(measurement);
@@ -160,7 +235,7 @@ function saveMeasurement(){
 
   setData(data);
 
-  document.getElementById("status").innerHTML =
+  statusText.innerHTML =
     `<span style="color:${status.color}">Status: ${status.text}</span>`;
 
   resetForm();
@@ -169,14 +244,13 @@ function saveMeasurement(){
 
 function renderMeasurements(){
   const data = getData();
-  const list = document.getElementById("measurementsList");
 
   if(data.length === 0){
-    list.innerHTML = '<p class="small">Nog geen metingen opgeslagen.</p>';
+    measurementsList.innerHTML = '<p class="small">Nog geen metingen opgeslagen.</p>';
     return;
   }
 
-  list.innerHTML = data.map((item, index) => {
+  measurementsList.innerHTML = data.map((item, index) => {
     const status = getStatus(parseFloat(item.value));
     return `
       <div class="note">
@@ -185,37 +259,42 @@ function renderMeasurements(){
         ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
         <small>Gemeten: ${item.date}</small>
         ${item.updated ? `<br><small>Aangepast: ${item.updated}</small>` : ""}
-        <div class="note-actions">
-          <button class="button warning" onclick="editMeasurement(${index})">Aanpassen</button>
-          <button class="button danger" onclick="deleteMeasurement(${index})">Verwijderen</button>
-        </div>
+        ${isSmart ? `
+          <div class="note-actions">
+            <button class="button warning" onclick="editMeasurement(${index})">Aanpassen</button>
+            <button class="button danger" onclick="deleteMeasurement(${index})">Verwijderen</button>
+          </div>
+        ` : ""}
       </div>
     `;
   }).join("");
 }
 
 function editMeasurement(index){
+  if(!isSmart) return;
+
   const data = getData();
   const item = data[index];
 
-  document.getElementById("khInput").value = item.value;
-  document.getElementById("noteInput").value = item.note || "";
+  khInput.value = item.value;
+  noteInput.value = item.note || "";
 
   const status = getStatus(parseFloat(item.value));
 
-  document.getElementById("status").innerHTML =
+  statusText.innerHTML =
     `<span style="color:${status.color}">Status: ${status.text}</span>`;
 
   editIndex = index;
 
-  document.getElementById("formTitle").innerText = "Meting aanpassen";
-  document.getElementById("saveButton").innerText = "Wijziging opslaan";
-  document.getElementById("cancelButton").style.display = "block";
+  formTitle.innerText = "Meting aanpassen";
+  saveButton.innerText = "Wijziging opslaan";
+  cancelButton.style.display = "block";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteMeasurement(index){
+  if(!isSmart) return;
   if(!confirm("Weet je zeker dat je deze meting wilt verwijderen?")) return;
 
   const data = getData();
@@ -229,15 +308,24 @@ function cancelEdit(){
 }
 
 function resetForm(){
-  document.getElementById("khInput").value = "";
-  document.getElementById("noteInput").value = "";
-  document.getElementById("status").innerHTML = "";
+  khInput.value = "";
+  noteInput.value = "";
+  statusText.innerHTML = "";
 
   editIndex = null;
 
-  document.getElementById("formTitle").innerText = "Nieuwe meting toevoegen";
-  document.getElementById("saveButton").innerText = "Opslaan";
-  document.getElementById("cancelButton").style.display = "none";
+  formTitle.innerText = "Nieuwe meting toevoegen";
+  saveButton.innerText = "Opslaan";
+  cancelButton.style.display = "none";
+
+  if(!isSmart){
+    khInput.disabled = true;
+    noteInput.disabled = true;
+    saveButton.disabled = true;
+    saveButton.innerText = "Scan NFC-tag om op te slaan";
+    formTitle.innerText = "Meting toevoegen vergrendeld";
+    statusText.innerText = "Deze pagina is alleen volledig actief via de juiste KH NFC-tag.";
+  }
 }
 
 function escapeHtml(text){
@@ -249,7 +337,7 @@ function escapeHtml(text){
     .replace(/'/g, "&#039;");
 }
 
-renderMeasurements();
+initPage();
 </script>
 
 </body>
